@@ -1,25 +1,58 @@
 #include "battle_c.h"
-
 #include "stdio.h"
 #include "stdlib.h"
+#include "unistd.h"
 
-int main(int argc, char *argv[]) {
+// Afficher les informations du joueur
+void afficher_infos_player(BC_Connection *connection) {
+    BC_PlayerData monPlayer = bc_get_player_data(connection);
+    printf("ID : %d\n", monPlayer.id);
+    printf("Health : %d\n", monPlayer.health);
+    printf("Armor : %d\n", monPlayer.armor);
+    printf("Score : %d\n", monPlayer.score);
+    printf("Position x: %.2f , y: %.2f\n", monPlayer.position.x, monPlayer.position.y);
+}
 
-  BC_Connection *conn = bc_connect("5.135.136.236", 8080);
 
-  bc_get_world_info(conn);
+void se_deplacer(BC_Connection *connection, float speed_x, float speed_y, float speed_z) {
+    bc_set_speed(connection, speed_x, speed_y, speed_z);
+    printf("Vitesse définie : (%.2f, %.2f, %.2f)\n", speed_x, speed_y, speed_z);
+}
 
-  bc_set_speed(conn, 1.2, 0.4, 0);
+void radar_ping(BC_Connection *connection) {
+    BC_List *objects = bc_radar_ping(connection);
+    while (objects) {
+        BC_MapObject *object = (BC_MapObject *)bc_ll_value(objects);
+        printf("Objet détecté : ID=%d, Type=%d, Position=(%.2f, %.2f, %.2f)\n",
+               object->id,
+               object->type,
+               object->position.x,
+               object->position.y,
+               object->position.z);
+        objects = bc_ll_next(objects);
+    }
+}
 
-  BC_PlayerData data = bc_get_player_data(conn);
 
-  BC_List *list = bc_radar_ping(conn);
+int main() {
+    BC_Connection *connection = bc_connect("5.135.136.236", 8080);
+    if (!connection) {
+        printf("Erreur : Impossible de se connecter au serveur\n");
+        return 1;
+    }
+    printf("Connecté au serveur avec succès !\n");
 
-  do {
-    BC_MapObject *map_object = (BC_MapObject *)bc_ll_value(list);
-    printf("map_object x = %d, y = %d", map_object->position.x,
-           map_object->position.y);
+    afficher_infos_player(connection);
 
-  } while (((list = bc_ll_next(list)) != NULL));
-  return EXIT_SUCCESS;
+    printf("Déplacement du joueur...\n");
+    se_deplacer(connection, 1.0f, 0.0f, 0.0f);  // Déplacer vers la droite
+
+
+    printf("Analyse radar...\n");
+    radar_ping(connection);
+
+
+    sleep(2);
+
+    return 0;
 }
