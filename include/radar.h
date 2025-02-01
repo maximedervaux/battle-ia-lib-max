@@ -5,4 +5,7 @@
 #ifndef RADAR_H
 #define RADAR_H
 
+#include "battle_c.h"
+
+BC_MapObject *trouver_ennemi_proche(BC_Connection *connection, BC_Vector3 position_joueur, int id_joueur);
 #endif //RADAR_H
