@@ -1,57 +1,91 @@
 #include "battle_c.h"
-#include "stdio.h"
-#include "stdlib.h"
-#include "unistd.h" // Pour sleep()
+#include "unistd.h"
 #include "math.h"
-#include "deplacement.h"
-#include "tir.h"
-#include "tools.h"
-#include "radar.h"
+#include <ncurses.h>
 
+int effectuer_tir(BC_Connection *connection, int angle) {
+    float angle_radian = angle * (M_PI / 180);
+    BC_ShootResult result = bc_shoot(connection, angle_radian);
+    printf("TIR à angle %.2f radian (%d degrés)\n", angle_radian, angle);
+    if (result.success) {
+        printf("  Tir réussi !\n");
+        if (result.target_destroyed) {
+            printf("  L'ennemi a été détruit ! (ID cible : %lu)\n", result.target_id);
+        } else {
+            printf("  Dégâts infligés : %lu points (ID cible : %lu)\n", result.damage_points, result.target_id);
+        }
+    } else {
+        printf("  Échec du tir.\n");
+        switch (result.fail_reason) {
+            case COOLDOWN:
+                printf("  Le tir est en attente (cooldown).\n");
+                break;
+            case MISS:
+                printf("  Le tir a échoué (miss).\n");
+                break;
+            case UNKNOWN:
+            default:
+                printf("  Raison inconnue de l'échec.\n");
+        }
+    }
+    return result.success;
+}
+
+void se_deplacer(BC_Connection *connection, float speed_x, float speed_y) {
+    bc_set_speed(connection, speed_x, speed_y, 0.0);
+    fflush(stdout);
+}
+
+void deplacer_char(BC_Connection *connection) {
+    initscr();
+    timeout(0);
+    cbreak();
+    noecho();
+    keypad(stdscr, TRUE);
+
+    int key;
+    float speed_x = 0.0, speed_y = 0.0;
+
+    while (1) {
+        key = getch();
+        switch (key) {
+            case KEY_UP:
+                speed_y = -5.0;
+                break;
+            case KEY_DOWN:
+                speed_y = 5.0;
+                break;
+            case KEY_LEFT:
+                speed_x = -5.0;
+                break;
+            case KEY_RIGHT:
+                speed_x = 5.0;
+                break;
+            case 'z':
+                effectuer_tir(connection, 0);
+                break;
+            case 'a':
+                speed_y = 0.0;
+                speed_x = 0.0;
+                break;
+        }
+        se_deplacer(connection, speed_x, speed_y);
+        usleep(100000);
+    }
+
+    endwin();
+}
 
 int main() {
     BC_Connection *connection = bc_connect("5.135.136.236", 8080);
     if (!connection) {
         printf("Erreur : Impossible de se connecter au serveur\n");
-        fflush(stdout);
         return 1;
     }
-
     printf("Connecté au serveur avec succès !\n");
-    fflush(stdout);
-
-    BC_WorldInfo world_info;
-    afficher_infos_monde(connection, &world_info);
-
-    BC_PlayerData player;
-    afficher_infos_player(connection, &player);
-
-    float destination_x = 96.0;
-    float destination_y = 70.0;
-
-    aller_a_position_specifique(connection, &player, destination_x, destination_y);
 
     while (1) {
-        player = bc_get_player_data(connection);  // Mise à jour de la position du joueur
-
-        BC_MapObject *ennemi_proche = trouver_ennemi_proche(connection, player.position,player.id);
-
-        while (ennemi_proche) {
-            float dx = ennemi_proche->position.x - player.position.x;
-            float dy = ennemi_proche->position.y - player.position.y;
-
-
-            int angle_tir = (int)(atan2(dy, dx) * (180.0 / M_PI));
-            if (angle_tir < 0) angle_tir += 360;
-
-            effectuer_tir(connection, angle_tir);
-
-            sleep(3);
-
-            player = bc_get_player_data(connection);
-            ennemi_proche = trouver_ennemi_proche(connection, player.position,player.id);
-        }
-
+        deplacer_char(connection);
         sleep(1);
     }
 

@@ -11,9 +11,6 @@ BC_Vector3 position_joueur(BC_Connection *connection, BC_PlayerData *player) {
     return player->position;
 }
 
-float calculer_distance(float x1, float y1, float x2, float y2) {
-    return sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
-}
 
 
 void afficher_infos_monde(BC_Connection *connection, BC_WorldInfo *world_info) {
@@ -33,20 +30,3 @@ void afficher_infos_player(BC_Connection *connection, BC_PlayerData *player) {
     printf("Position du joueur -> x: %.2f, y: %.2f\n", player->position.x, player->position.y);
 }
 
-void afficher_objets_radar(BC_Connection *connection) {
-    size_t count;
-    BC_List *objets = bc_radar_ping(connection);
-
-    if (!objets) {
-        printf("Aucun objet détecté par le radar.\n");
-        return;
-    }
-    BC_List *node;
-    for (node = objets; node != NULL; node = bc_ll_next(node)) {
-        BC_MapObject *objet = (BC_MapObject *)bc_ll_value(node);
-        printf("Objet détecté : Type = %d, Position = (%.2f, %.2f)\n",
-               objet->type, objet->position.x, objet->position.y);
-    }
-
-    bc_ll_free(objets);  // Libérer la mémoire allouée pour la liste
-}
