@@ -50,20 +50,29 @@ void deplacer_char(BC_Connection *connection) {
         key = getch();
         switch (key) {
             case KEY_UP:
-                speed_y = -5.0;
+                speed_y = -10.0;
                 break;
             case KEY_DOWN:
-                speed_y = 5.0;
+                speed_y = 10.0;
                 break;
             case KEY_LEFT:
-                speed_x = -5.0;
+                speed_x = -10.0;
                 break;
             case KEY_RIGHT:
-                speed_x = 5.0;
+                speed_x = 10.0;
                 break;
             case 'z':
-                effectuer_tir(connection, 0);
+                effectuer_tir(connection, 270);
                 break;
+            case 'q':
+                effectuer_tir(connection, 180);
+            break;
+            case 's':
+                effectuer_tir(connection, 90);
+            break;
+            case 'd':
+                effectuer_tir(connection, 0);
+            break;
             case 'a':
                 speed_y = 0.0;
                 speed_x = 0.0;
