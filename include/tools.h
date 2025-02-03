@@ -12,5 +12,5 @@ float calculer_distance(float x1, float y1, float x2, float y2) ;
 void afficher_infos_monde(BC_Connection *connection, BC_WorldInfo *world_info) ;
 void afficher_infos_player(BC_Connection *connection, BC_PlayerData *player) ;
 void afficher_objets_radar(BC_Connection *connection) ;
-
+void afficher_points_player(BC_Connection *connection, BC_PlayerData *player) ;
 #endif //TOOLS_H

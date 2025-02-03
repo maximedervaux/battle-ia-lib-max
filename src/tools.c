@@ -26,13 +26,17 @@ void afficher_infos_monde(BC_Connection *connection, BC_WorldInfo *world_info) {
 
 void afficher_infos_player(BC_Connection *connection, BC_PlayerData *player) {
     *player = bc_get_player_data(connection);
-    printf("ID : %d\n", player->id);
+    printf("ID : %lu\n", player->id);
     printf("Health : %d\n", player->health);
     printf("Armor : %d\n", player->armor);
     printf("Score : %d\n", player->score);
     printf("Position du joueur -> x: %.2f, y: %.2f\n", player->position.x, player->position.y);
 }
 
+void afficher_points_player(BC_Connection *connection, BC_PlayerData *player) {
+    *player = bc_get_player_data(connection);
+    printf("Score : %d\n", player->score);
+}
 void afficher_objets_radar(BC_Connection *connection) {
     size_t count;
     BC_List *objets = bc_radar_ping(connection);
