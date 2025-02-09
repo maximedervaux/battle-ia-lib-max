@@ -1,38 +1,38 @@
+#include <pthread.h>
 #include "battle_c.h"
 #include "stdio.h"
 #include "stdlib.h"
 #include "unistd.h"
+#include "math.h"
+#include "deplacement.h"
+#include "tir.h"
+#include "tools.h"
+#include "radar.h"
+#include "main.h"
 
-// Afficher les informations du joueur
-void afficher_infos_player(BC_Connection *connection) {
-    BC_PlayerData monPlayer = bc_get_player_data(connection);
-    printf("ID : %d\n", monPlayer.id);
-    printf("Health : %d\n", monPlayer.health);
-    printf("Armor : %d\n", monPlayer.armor);
-    printf("Score : %d\n", monPlayer.score);
-    printf("Position x: %.2f , y: %.2f\n", monPlayer.position.x, monPlayer.position.y);
-}
+void *thread_tir(void *arg) {
+    ThreadData *data = (ThreadData *)arg;
+    BC_Connection *connection = data->connection;
+    BC_PlayerData *player = data->player;
 
+    while (1) {
+        sleep(3); // Tir toutes les 3 secondes
 
-void se_deplacer(BC_Connection *connection, float speed_x, float speed_y, float speed_z) {
-    bc_set_speed(connection, speed_x, speed_y, speed_z);
-    printf("Vitesse définie : (%.2f, %.2f, %.2f)\n", speed_x, speed_y, speed_z);
-}
+        *player = bc_get_player_data(connection);
+        BC_MapObject *ennemi_proche = trouver_ennemi_proche(connection, player->position, player->id);
 
-void radar_ping(BC_Connection *connection) {
-    BC_List *objects = bc_radar_ping(connection);
-    while (objects) {
-        BC_MapObject *object = (BC_MapObject *)bc_ll_value(objects);
-        printf("Objet détecté : ID=%d, Type=%d, Position=(%.2f, %.2f, %.2f)\n",
-               object->id,
-               object->type,
-               object->position.x,
-               object->position.y,
-               object->position.z);
-        objects = bc_ll_next(objects);
+        if (ennemi_proche) {
+            float dx = ennemi_proche->position.x - player->position.x;
+            float dy = ennemi_proche->position.y - player->position.y;
+            int angle_tir = (int)(atan2(dy, dx) * (180.0 / M_PI));
+            if (angle_tir < 0) angle_tir += 360;
+
+            effectuer_tir(connection, angle_tir);
+            printf("🔫 Tir effectué à %d° !\n", angle_tir);
+        }
     }
+    return NULL;
 }
-
 
 int main() {
     BC_Connection *connection = bc_connect("5.135.136.236", 8080);
@@ -40,19 +40,30 @@ int main() {
         printf("Erreur : Impossible de se connecter au serveur\n");
         return 1;
     }
+
     printf("Connecté au serveur avec succès !\n");
 
-    afficher_infos_player(connection);
+    BC_PlayerData player = bc_get_player_data(connection);
 
-    printf("Déplacement du joueur...\n");
-    se_deplacer(connection, 1.0f, 0.0f, 0.0f);  // Déplacer vers la droite
+    // Lancer le thread pour le tir
+    pthread_t tir_thread;
+    ThreadData data = {connection, &player};
+    pthread_create(&tir_thread, NULL, thread_tir, &data);
 
+    // Boucle principale : Déplacement vers les boosts
+    while (1) {
+        player = bc_get_player_data(connection);
+        BC_MapObject *boost_proche = trouver_boost_proche(connection, player.position, player.id);
 
-    printf("Analyse radar...\n");
-    radar_ping(connection);
+        if (boost_proche) {
+            aller_a_position_specifique(connection, &player, boost_proche->position.x, boost_proche->position.y);
+        }
 
+        afficher_points_player(connection, &player);
+        sleep(1);
+    }
 
-    sleep(2);
+    pthread_join(tir_thread, NULL);
 
     return 0;
 }
