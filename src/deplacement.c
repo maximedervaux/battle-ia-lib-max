@@ -15,8 +15,8 @@ void se_deplacer(BC_Connection *connection, float speed_x, float speed_y) {
 
 void aller_a_position_specifique(BC_Connection *connection, BC_PlayerData *player, float destination_x, float destination_y) {
     float vitesse_max = 10.0;
-    float seuil_arret = 1.0;
-    float seuil_deceleration = 15.0;
+    float seuil_arret = 0.9;
+    float seuil_deceleration = 5.0;
 
     while (calculer_distance(player->position.x, player->position.y, destination_x, destination_y) > seuil_arret) {
         *player = bc_get_player_data(connection);

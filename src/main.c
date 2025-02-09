@@ -8,14 +8,8 @@
 #include "tir.h"
 #include "tools.h"
 #include "radar.h"
+#include "main.h"
 
-// Structure pour passer les données au thread
-typedef struct {
-    BC_Connection *connection;
-    BC_PlayerData *player;
-} ThreadData;
-
-// Fonction exécutée par le thread de tir
 void *thread_tir(void *arg) {
     ThreadData *data = (ThreadData *)arg;
     BC_Connection *connection = data->connection;
@@ -69,7 +63,6 @@ int main() {
         sleep(1);
     }
 
-    // On ne rejoint jamais le thread ici, mais en cas d'arrêt propre :
     pthread_join(tir_thread, NULL);
 
     return 0;
